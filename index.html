@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HVAC Engineering Simulator AC2</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: #262626;
+        }
+
+        .header {
+            background: linear-gradient(180deg, #009999 0%, #007a7a 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 4px solid #00cccc;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 1.8em;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            font-weight: 500;
+        }
+
+        .header-right {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .toolbar {
+            background: #1f1f1f;
+            padding: 12px 40px;
+            border-bottom: 1px solid #404040;
+            display: flex;
+            gap: 15px;
+        }
+
+        .toolbar-btn {
+            background: #333;
+            border: 1px solid #555;
+            color: #e0e0e0;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            background: #404040;
+            border-color: #00cccc;
+        }
+
+        .toolbar-btn.primary {
+            background: #009999;
+            border-color: #00cccc;
+        }
+
+        .toolbar-btn.primary:hover {
+            background: #00b3b3;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            height: calc(100vh - 140px);
+        }
+
+        .sidebar {
+            background: #2a2a2a;
+            border-right: 1px solid #404040;
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            border-bottom: 1px solid #404040;
+        }
+
+        .section-header {
+            background: #1f1f1f;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 0.95em;
+            color: #00cccc;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .section-header:hover {
+            background: #252525;
+        }
+
+        .section-content {
+            padding: 20px;
+        }
+
+        .param-group {
+            margin-bottom: 18px;
+        }
+
+        .param-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.85em;
+            color: #b0b0b0;
+        }
+
+        .param-value {
+            color: #00cccc;
+            font-weight: 600;
+        }
+
+        .param-input {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            color: #e0e0e0;
+            padding: 8px;
+            border-radius: 2px;
+            font-size: 0.9em;
+        }
+
+        .param-input:focus {
+            outline: none;
+            border-color: #00cccc;
+            box-shadow: 0 0 0 2px rgba(0, 204, 204, 0.1);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #404040;
+            outline: none;
+            border-radius: 2px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #00cccc;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: #00cccc;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tabs {
+            background: #2a2a2a;
+            border-bottom: 1px solid #404040;
+            display: flex;
+            padding: 0 20px;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            color: #999;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: #00cccc;
+        }
+
+        .tab.active {
+            color: #00cccc;
+            border-bottom-color: #00cccc;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+            background: #1a1a1a;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .visualization-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .chart-card {
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-radius: 4px;
+            padding: 20px;
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-title {
+            color: #00cccc;
+            font-size: 1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #404040;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .chart-container.tall {
+            height: 400px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .metric-card {
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-left: 4px solid #00cccc;
+            padding: 15px;
+            border-radius: 3px;
+        }
+
+        .metric-label {
+            color: #999;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            color: #00cccc;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .metric-unit {
+            color: #666;
+            font-size: 0.6em;
+            margin-left: 4px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .data-table th {
+            background: #1f1f1f;
+            color: #00cccc;
+            padding: 10px;
+            text-align: left;
+            font-size: 0.85em;
+            font-weight: 600;
+            border-bottom: 2px solid #404040;
+        }
+
+        .data-table td {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            font-size: 0.9em;
+        }
+
+        .data-table tr:hover {
+            background: #2a2a2a;
+        }
+
+        .info-box {
+            background: rgba(0, 153, 153, 0.1);
+            border-left: 3px solid #009999;
+            padding: 15px;
+            margin: 20px;
+            font-size: 0.9em;
+            line-height: 1.6;
+            border-radius: 2px;
+        }
+
+        .warning-box {
+            background: rgba(255, 152, 0, 0.1);
+            border-left: 3px solid #ff9800;
+            padding: 15px;
+            margin: 20px;
+            font-size: 0.9em;
+            line-height: 1.6;
+            border-radius: 2px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #404040;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .param-unit {
+            color: #666;
+            font-size: 0.85em;
+            margin-left: 4px;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <div class="logo"> HVAC</div>
+                <h1>Room Simulator AC2</h1>
+            </div>
+            <div class="header-right">
+                Version .2 | Eros Hama
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <button class="toolbar-btn primary" onclick="runSimulation()">▶ Run Simulation</button>
+            <button class="toolbar-btn" onclick="resetParameters()">↺ Reset</button>
+            <button class="toolbar-btn" onclick="exportData()">↓ Export Data</button>
+            <button class="toolbar-btn"> Generate Report</button>
+        </div>
+
+        <div class="main-layout">
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <div class="section-header"> ROOM GEOMETRY</div>
+                    <div class="section-content">
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Length <span class="param-unit">m</span></span>
+                                <span class="param-value" id="lengthVal">5.0</span>
+                            </div>
+                            <input type="range" id="length" min="2" max="20" step="0.5" value="5">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Width <span class="param-unit">m</span></span>
+                                <span class="param-value" id="widthVal">4.0</span>
+                            </div>
+                            <input type="range" id="width" min="2" max="20" step="0.5" value="4">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Height <span class="param-unit">m</span></span>
+                                <span class="param-value" id="heightVal">3.0</span>
+                            </div>
+                            <input type="range" id="height" min="2" max="6" step="0.1" value="3">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Floor Area</span>
+                                <span class="param-value"><span id="areaDisplay">20.0</span> m²</span>
+                            </div>
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Volume</span>
+                                <span class="param-value"><span id="volumeDisplay">60.0</span> m³</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-header"> BUILDING DESIGN</div>
+                    <div class="section-content">
+                        <div class="param-group">
+                            <div class="param-label"><span>Building Orientation</span></div>
+                            <select class="param-input" id="orientation">
+                                <option value="north">North Facing</option>
+                                <option value="south">South Facing</option>
+                                <option value="east">East Facing</option>
+                                <option value="west">West Facing</option>
+                            </select>
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label"><span>Floor Level</span></div>
+                            <select class="param-input" id="floorLevel">
+                                <option value="ground">Ground Floor</option>
+                                <option value="middle">Middle Floor</option>
+                                <option value="top">Top Floor</option>
+                            </select>
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label"><span>Building Color (Exterior)</span></div>
+                            <select class="param-input" id="buildingColor">
+                                <option value="light">Light (Reflective)</option>
+                                <option value="medium">Medium</option>
+                                <option value="dark">Dark (Absorptive)</option>
+                            </select>
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Shading Coefficient</span>
+                                <span class="param-value" id="shadingVal">0.5</span>
+                            </div>
+                            <input type="range" id="shading" min="0" max="1" step="0.1" value="0.5">
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="hasOverhang">
+                            <label for="hasOverhang">Window Overhang/Awnings</label>
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Overhang Depth <span class="param-unit">m</span></span>
+                                <span class="param-value" id="overhangVal">0.5</span>
+                            </div>
+                            <input type="range" id="overhang" min="0" max="2" step="0.1" value="0.5">
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="hasLandscaping">
+                            <label for="hasLandscaping">Landscaping/Trees Nearby</label>
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Adjacent Building Height <span class="param-unit">m</span></span>
+                                <span class="param-value" id="adjacentHeightVal">0</span>
+                            </div>
+                            <input type="range" id="adjacentHeight" min="0" max="20" step="1" value="0">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Distance to Adjacent Building <span class="param-unit">m</span></span>
+                                <span class="param-value" id="adjacentDistVal">10</span>
+                            </div>
+                            <input type="range" id="adjacentDist" min="0" max="50" step="5" value="10">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-header"> BUILDING ENVELOPE</div>
+                    <div class="section-content">
+                        <div class="param-group">
+                            <div class="param-label"><span>Wall Material</span></div>
+                            <select class="param-input" id="wallType">
+                                <option value="brick">Brick Masonry (R: 0.8)</option>
+                                <option value="concrete">Concrete Block (R: 0.6)</option>
+                                <option value="wood">Wood Frame (R: 1.2)</option>
+                                <option value="insulated">Insulated Wall (R: 2.5)</option>
+                                <option value="glass">Glass Curtain (R: 0.3)</option>
+                                <option value="aac">AAC Block (R: 1.8)</option>
+                            </select>
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Wall Thickness <span class="param-unit">cm</span></span>
+                                <span class="param-value" id="wallThicknessVal">20</span>
+                            </div>
+                            <input type="range" id="wallThickness" min="10" max="60" step="5" value="20">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label"><span>Roof/Ceiling Type</span></div>
+                            <select class="param-input" id="ceilingType">
+                                <option value="concrete">Concrete Slab (R: 0.5)</option>
+                                <option value="insulated">Insulated Ceiling (R: 3.0)</option>
+                                <option value="metal">Metal Roof (R: 0.4)</option>
+                                <option value="tiles">Clay Tiles (R: 0.7)</option>
+                                <option value="green">Green Roof (R: 2.0)</option>
+                            </select>
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Window Area <span class="param-unit">% of wall</span></span>
+                                <span class="param-value" id="windowAreaVal">15</span>
+                            </div>
+                            <input type="range" id="windowArea" min="0" max="50" step="5" value="15">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label"><span>Window Type</span></div>
+                            <select class="param-input" id="windowType">
+                                <option value="single">Single Pane (U: 5.8)</option>
+                                <option value="double">Double Glazed (U: 2.8)</option>
+                                <option value="lowE">Low-E Double (U: 1.8)</option>
+                                <option value="triple">Triple Glazed (U: 1.2)</option>
+                            </select>
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Insulation Thickness <span class="param-unit">cm</span></span>
+                                <span class="param-value" id="insulationVal">5</span>
+                            </div>
+                            <input type="range" id="insulation" min="0" max="20" step="1" value="5">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label"><span>Floor Type</span></div>
+                            <select class="param-input" id="floorType">
+                                <option value="concrete">Concrete Slab</option>
+                                <option value="raised">Raised Floor</option>
+                                <option value="carpet">Carpeted</option>
+                                <option value="tile">Tile/Ceramic</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-header">🌡️ ENVIRONMENTAL CONDITIONS</div>
+                    <div class="section-content">
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Outside Temp <span class="param-unit">°C</span></span>
+                                <span class="param-value" id="outsideTempVal">35</span>
+                            </div>
+                            <input type="range" id="outsideTemp" min="15" max="50" step="1" value="35">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Initial Room Temp <span class="param-unit">°C</span></span>
+                                <span class="param-value" id="initialTempVal">32</span>
+                            </div>
+                            <input type="range" id="initialTemp" min="20" max="45" step="1" value="32">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Outside Humidity <span class="param-unit">%</span></span>
+                                <span class="param-value" id="outsideHumidityVal">60</span>
+                            </div>
+                            <input type="range" id="outsideHumidity" min="20" max="95" step="5" value="60">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Initial Humidity <span class="param-unit">%</span></span>
+                                <span class="param-value" id="initialHumidityVal">65</span>
+                            </div>
+                            <input type="range" id="initialHumidity" min="30" max="90" step="5" value="65">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Solar Radiation <span class="param-unit">W/m²</span></span>
+                                <span class="param-value" id="solarRadiationVal">500</span>
+                            </div>
+                            <input type="range" id="solarRadiation" min="0" max="1200" step="50" value="500">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Wind Speed <span class="param-unit">m/s</span></span>
+                                <span class="param-value" id="windSpeedVal">2.5</span>
+                            </div>
+                            <input type="range" id="windSpeed" min="0" max="15" step="0.5" value="2.5">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-header">👥 INTERNAL LOADS</div>
+                    <div class="section-content">
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Occupants</span>
+                                <span class="param-value" id="occupantsVal">2</span>
+                            </div>
+                            <input type="range" id="occupants" min="0" max="20" step="1" value="2">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label"><span>Activity Level</span></div>
+                            <select class="param-input" id="activityLevel">
+                                <option value="seated">Seated/Light Work (100W)</option>
+                                <option value="standing">Standing/Moderate (150W)</option>
+                                <option value="active">Active/Heavy (200W)</option>
+                            </select>
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Lighting Load <span class="param-unit">W/m²</span></span>
+                                <span class="param-value" id="lightingVal">10</span>
+                            </div>
+                            <input type="range" id="lighting" min="0" max="30" step="1" value="10">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Equipment Load <span class="param-unit">W/m²</span></span>
+                                <span class="param-value" id="equipmentVal">15</span>
+                            </div>
+                            <input type="range" id="equipment" min="0" max="50" step="5" value="15">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-header"> AC SYSTEM</div>
+                    <div class="section-content">
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>AC Capacity <span class="param-unit">BTU/h</span></span>
+                                <span class="param-value" id="acCapacityVal">12000</span>
+                            </div>
+                            <input type="range" id="acCapacity" min="6000" max="36000" step="3000" value="12000">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Airflow Rate <span class="param-unit">CFM</span></span>
+                                <span class="param-value" id="airflowVal">400</span>
+                            </div>
+                            <input type="range" id="airflow" min="200" max="1200" step="50" value="400">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Target Temp <span class="param-unit">°C</span></span>
+                                <span class="param-value" id="targetTempVal">24</span>
+                            </div>
+                            <input type="range" id="targetTemp" min="18" max="30" step="1" value="24">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>EER Rating</span>
+                                <span class="param-value" id="eerVal">10.0</span>
+                            </div>
+                            <input type="range" id="eer" min="8" max="20" step="0.5" value="10">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span>Infiltration Rate <span class="param-unit">ACH</span></span>
+                                <span class="param-value" id="infiltrationVal">0.5</span>
+                            </div>
+                            <input type="range" id="infiltration" min="0" max="3" step="0.1" value="0.5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('overview')">📊 Overview</div>
+                    <div class="tab" onclick="switchTab('temporal')">⏱️ Temporal Analysis</div>
+                    <div class="tab" onclick="switchTab('breakdown')">🔥 Heat Breakdown</div>
+                    <div class="tab" onclick="switchTab('performance')">⚡ Performance</div>
+                    <div class="tab" onclick="switchTab('data')">📋 Data Tables</div>
+                </div>
+
+                <div id="overview" class="tab-content active">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Time to Target</div>
+                            <div class="metric-value" id="timeToTarget">--<span class="metric-unit">min</span></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Total Cooling Load</div>
+                            <div class="metric-value" id="coolingLoad">--<span class="metric-unit">kW</span></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Power Consumption</div>
+                            <div class="metric-value" id="powerConsumption">--<span class="metric-unit">kW</span></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Energy Cost/Hour</div>
+                            <div class="metric-value" id="energyCost">--<span class="metric-unit">$/h</span></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">System Efficiency</div>
+                            <div class="metric-value" id="efficiency">--<span class="metric-unit">%</span></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Annual Cost</div>
+                            <div class="metric-value" id="annualCost">--<span class="metric-unit">$</span></div>
+                        </div>
+                    </div>
+
+                    <div class="visualization-grid">
+                        <div class="chart-card">
+                            <div class="chart-title">System Performance Overview</div>
+                            <div class="chart-container">
+                                <canvas id="performanceChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-title">Heat Gain Distribution</div>
+                            <div class="chart-container">
+                                <canvas id="heatPieChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="statusMessage"></div>
+                </div>
+
+                <div id="temporal" class="tab-content">
+                    <div class="visualization-grid">
+                        <div class="chart-card full-width">
+                            <div class="chart-title">Temperature vs Time</div>
+                            <div class="chart-container tall">
+                                <canvas id="tempTimeChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card full-width">
+                            <div class="chart-title">Humidity vs Time</div>
+                            <div class="chart-container tall">
+                                <canvas id="humidityTimeChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card full-width">
+                            <div class="chart-title">Power Consumption vs Time</div>
+                            <div class="chart-container tall">
+                                <canvas id="powerTimeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="breakdown" class="tab-content">
+                    <div class="visualization-grid">
+                        <div class="chart-card full-width">
+                            <div class="chart-title">Heat Gain Breakdown by Source</div>
+                            <div class="chart-container tall">
+                                <canvas id="heatBarChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-title">Sensible vs Latent Load</div>
+                            <div class="chart-container">
+                                <canvas id="sensibleLatentChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-title">Energy Distribution</div>
+                            <div class="chart-container">
+                                <canvas id="energyDoughnutChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="performance" class="tab-content">
+                    <div class="visualization-grid">
+                        <div class="chart-card full-width">
+                            <div class="chart-title">System Efficiency Metrics</div>
+                            <div class="chart-container">
+                                <canvas id="efficiencyRadarChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-title">Capacity Utilization</div>
+                            <div class="chart-container">
+                                <canvas id="capacityGaugeChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-title">Cost Analysis</div>
+                            <div class="chart-container">
+                                <canvas id="costBarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="data" class="tab-content">
+                    <div style="padding: 20px;">
+                        <div class="chart-card">
+                            <div class="chart-title">Detailed Simulation Results</div>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th>Value</th>
+                                        <th>Unit</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dataTableBody">
+                                    <tr><td colspan="4" style="text-align: center; color: #666;">Run simulation to see results</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let charts = {};
+        let simulationData = {
+            timePoints: [],
+            temperatures: [],
+            humidities: [],
+            powerConsumption: []
+        };
+
+        const ranges = {
+            length: 'lengthVal', width: 'widthVal', height: 'heightVal',
+            wallThickness: 'wallThicknessVal', windowArea: 'windowAreaVal',
+            insulation: 'insulationVal', outsideTemp: 'outsideTempVal',
+            initialTemp: 'initialTempVal', outsideHumidity: 'outsideHumidityVal',
+            initialHumidity: 'initialHumidityVal', solarRadiation: 'solarRadiationVal',
+            windSpeed: 'windSpeedVal', occupants: 'occupantsVal',
+            lighting: 'lightingVal', equipment: 'equipmentVal',
+            acCapacity: 'acCapacityVal', airflow: 'airflowVal',
+            targetTemp: 'targetTempVal', eer: 'eerVal',
+            infiltration: 'infiltrationVal', shading: 'shadingVal',
+            overhang: 'overhangVal', adjacentHeight: 'adjacentHeightVal',
+            adjacentDist: 'adjacentDistVal'
+        };
+
+        for (let [inputId, displayId] of Object.entries(ranges)) {
+            const input = document.getElementById(inputId);
+            const display = document.getElementById(displayId);
+            if (input && display) {
+                input.addEventListener('input', function() {
+                    display.textContent = this.value;
+                    updateDimensions();
+                });
+            }
+        }
+
+        function updateDimensions() {
+            const length = parseFloat(document.getElementById('length').value);
+            const width = parseFloat(document.getElementById('width').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const area = length * width;
+            const volume = area * height;
+            document.getElementById('areaDisplay').textContent = area.toFixed(1);
+            document.getElementById('volumeDisplay').textContent = volume.toFixed(1);
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function getWallRValue(type) {
+            const rValues = { brick: 0.8, concrete: 0.6, wood: 1.2, insulated: 2.5, glass: 0.3, aac: 1.8 };
+            return rValues[type] || 0.8;
+        }
+
+        function getCeilingRValue(type) {
+            const rValues = { concrete: 0.5, insulated: 3.0, metal: 0.4, tiles: 0.7, green: 2.0 };
+            return rValues[type] || 0.5;
+        }
+
+        function getWindowUValue(type) {
+            const uValues = { single: 5.8, double: 2.8, lowE: 1.8, triple: 1.2 };
+            return uValues[type] || 5.8;
+        }
+
+        function getActivityHeat(level) {
+            const heat = { seated: 100, standing: 150, active: 200 };
+            return heat[level] || 100;
+        }
+
+        function getOrientationFactor(orientation) {
+            const factors = { north: 0.7, south: 1.3, east: 1.1, west: 1.2 };
+            return factors[orientation] || 1.0;
+        }
+
+        function getColorAbsorption(color) {
+            const absorption = { light: 0.3, medium: 0.5, dark: 0.7 };
+            return absorption[color] || 0.5;
+        }
+
+        function runSimulation() {
+            const length = parseFloat(document.getElementById('length').value);
+            const width = parseFloat(document.getElementById('width').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const area = length * width;
+            const volume = area * height;
+
+            const wallType = document.getElementById('wallType').value;
+            const wallThickness = parseFloat(document.getElementById('wallThickness').value) / 100;
+            const ceilingType = document.getElementById('ceilingType').value;
+            const windowAreaPercent = parseFloat(document.getElementById('windowArea').value);
+            const windowType = document.getElementById('windowType').value;
+            const insulationThickness = parseFloat(document.getElementById('insulation').value) / 100;
+
+            const orientation = document.getElementById('orientation').value;
+            const floorLevel = document.getElementById('floorLevel').value;
+            const buildingColor = document.getElementById('buildingColor').value;
+            const shadingCoeff = parseFloat(document.getElementById('shading').value);
+            const hasOverhang = document.getElementById('hasOverhang').checked;
+            const overhangDepth = parseFloat(document.getElementById('overhang').value);
+            const hasLandscaping = document.getElementById('hasLandscaping').checked;
+            const adjacentHeight = parseFloat(document.getElementById('adjacentHeight').value);
+            const adjacentDist = parseFloat(document.getElementById('adjacentDist').value);
+
+            const outsideTemp = parseFloat(document.getElementById('outsideTemp').value);
+            const initialTemp = parseFloat(document.getElementById('initialTemp').value);
+            const outsideHumidity = parseFloat(document.getElementById('outsideHumidity').value);
+            const initialHumidity = parseFloat(document.getElementById('initialHumidity').value);
+            const solarRadiation = parseFloat(document.getElementById('solarRadiation').value);
+            const windSpeed = parseFloat(document.getElementById('windSpeed').value);
+
+            const occupants = parseFloat(document.getElementById('occupants').value);
+            const activityLevel = document.getElementById('activityLevel').value;
+            const lighting = parseFloat(document.getElementById('lighting').value);
+            const equipment = parseFloat(document.getElementById('equipment').value);
+
+            const acCapacity = parseFloat(document.getElementById('acCapacity').value);
+            const airflow = parseFloat(document.getElementById('airflow').value);
+            const targetTemp = parseFloat(document.getElementById('targetTemp').value);
+            const eer = parseFloat(document.getElementById('eer').value);
+            const infiltration = parseFloat(document.getElementById('infiltration').value);
+
+            // Building design considerations
+            const orientationFactor = getOrientationFactor(orientation);
+            const colorAbsorption = getColorAbsorption(buildingColor);
+            const overhangReduction = hasOverhang ? (1 - (overhangDepth * 0.2)) : 1.0;
+            const landscapingReduction = hasLandscaping ? 0.85 : 1.0;
+            
+            let shadingFromAdjacent = 1.0;
+            if (adjacentHeight > 0 && adjacentDist > 0) {
+                const shadingAngle = Math.atan(adjacentHeight / adjacentDist);
+                shadingFromAdjacent = 1.0 - (Math.min(shadingAngle / (Math.PI / 4), 0.5));
+            }
+
+            const floorMultiplier = floorLevel === 'top' ? 1.3 : (floorLevel === 'ground' ? 0.9 : 1.0);
+
+            const wallRValue = getWallRValue(wallType);
+            const ceilingRValue = getCeilingRValue(ceilingType);
+            const windowUValue = getWindowUValue(windowType);
+            const insulationR = insulationThickness * 3.5;
+
+            const wallArea = 2 * (length + width) * height;
+            const windowArea = wallArea * (windowAreaPercent / 100);
+            const solidWallArea = wallArea - windowArea;
+
+            const wallUValue = 1 / ((wallRValue * wallThickness) + insulationR + 0.13);
+            const wallHeatGain = wallUValue * solidWallArea * (outsideTemp - targetTemp);
+
+            const windowHeatGain = windowUValue * windowArea * (outsideTemp - targetTemp);
+
+            const ceilingUValue = 1 / (ceilingRValue + insulationR);
+            const roofTempIncrease = (5 + (solarRadiation / 200)) * colorAbsorption * floorMultiplier;
+            const ceilingHeatGain = ceilingUValue * area * (outsideTemp + roofTempIncrease - targetTemp);
+
+            const SHGC = windowType === 'lowE' ? 0.4 : (windowType === 'triple' ? 0.5 : 0.7);
+            const solarHeatGain = windowArea * solarRadiation * SHGC * orientationFactor * 
+                                 shadingCoeff * overhangReduction * landscapingReduction * shadingFromAdjacent;
+
+            const activityHeat = getActivityHeat(activityLevel);
+            const occupantHeatGain = occupants * activityHeat;
+            const lightingHeatGain = lighting * area;
+            const equipmentHeatGain = equipment * area;
+
+            const airDensity = 1.2;
+            const airSpecificHeat = 1005;
+            const infiltrationHeatGain = (infiltration * volume * airDensity * airSpecificHeat * 
+                                         (outsideTemp - targetTemp)) / 3600;
+
+            const sensibleLoad = wallHeatGain + windowHeatGain + ceilingHeatGain + 
+                               solarHeatGain + occupantHeatGain * 0.7 + 
+                               lightingHeatGain + equipmentHeatGain + infiltrationHeatGain;
+
+            const latentLoad = occupantHeatGain * 0.3;
+            const totalCoolingLoad = sensibleLoad + latentLoad;
+
+            const acCapacityWatts = acCapacity * 0.293071;
+            const tempDifference = initialTemp - targetTemp;
+            const roomThermalMass = volume * airDensity * airSpecificHeat;
+            const netCooling = acCapacityWatts - totalCoolingLoad;
+
+            let timeToTarget;
+            if (netCooling > 0) {
+                timeToTarget = (roomThermalMass * tempDifference / netCooling) / 60;
+            } else {
+                timeToTarget = Infinity;
+            }
+
+            const powerConsumption = acCapacityWatts / (eer * 1000);
+            const energyCostPerHour = powerConsumption * 0.12;
+            const annualCost = energyCostPerHour * 24 * 365;
+
+            // Generate time series data
+            generateTimeSeriesData(initialTemp, targetTemp, initialHumidity, 50, timeToTarget, powerConsumption);
+
+            // Update metrics
+            document.getElementById('timeToTarget').innerHTML = 
+                (timeToTarget === Infinity ? '∞' : Math.round(timeToTarget)) + '<span class="metric-unit">min</span>';
+            document.getElementById('coolingLoad').innerHTML = 
+                (totalCoolingLoad / 1000).toFixed(2) + '<span class="metric-unit">kW</span>';
+            document.getElementById('powerConsumption').innerHTML = 
+                powerConsumption.toFixed(2) + '<span class="metric-unit">kW</span>';
+            document.getElementById('energyCost').innerHTML = 
+                energyCostPerHour.toFixed(2) + '<span class="metric-unit">$/h</span>';
+            document.getElementById('efficiency').innerHTML = 
+                ((acCapacityWatts / totalCoolingLoad) * 100).toFixed(0) + '<span class="metric-unit">%</span>';
+            document.getElementById('annualCost').innerHTML = 
+                annualCost.toFixed(0) + '<span class="metric-unit">$</span>';
+
+            // Update all charts
+            updateAllCharts({
+                wallHeatGain, windowHeatGain, ceilingHeatGain, solarHeatGain,
+                occupantHeatGain, lightingHeatGain, equipmentHeatGain, infiltrationHeatGain,
+                sensibleLoad, latentLoad, totalCoolingLoad, powerConsumption,
+                acCapacityWatts, eer, energyCostPerHour, timeToTarget
+            });
+
+            // Update data table
+            updateDataTable({
+                wallHeatGain, windowHeatGain, ceilingHeatGain, solarHeatGain,
+                occupantHeatGain, lightingHeatGain, equipmentHeatGain, infiltrationHeatGain,
+                sensibleLoad, latentLoad, totalCoolingLoad, powerConsumption,
+                energyCostPerHour, annualCost, timeToTarget
+            });
+
+            // Status message
+            let statusHTML = '';
+            if (timeToTarget === Infinity) {
+                statusHTML = '<div class="warning-box"><strong>⚠️ CRITICAL:</strong> AC capacity insufficient. System cannot reach target temperature.</div>';
+            } else {
+                statusHTML = '<div class="info-box"><strong>✓ OPTIMAL:</strong> System will reach target in ' + 
+                           Math.round(timeToTarget) + ' minutes at ' + 
+                           ((acCapacityWatts / totalCoolingLoad) * 100).toFixed(0) + '% capacity.</div>';
+            }
+            document.getElementById('statusMessage').innerHTML = statusHTML;
+        }
+
+        function generateTimeSeriesData(initialTemp, targetTemp, initialHumidity, targetHumidity, timeToTarget, power) {
+            simulationData.timePoints = [];
+            simulationData.temperatures = [];
+            simulationData.humidities = [];
+            simulationData.powerConsumption = [];
+
+            const steps = 60;
+            const timeIncrement = timeToTarget === Infinity ? 1 : timeToTarget / steps;
+
+            for (let i = 0; i <= steps; i++) {
+                const progress = i / steps;
+                const time = i * timeIncrement;
+                
+                simulationData.timePoints.push(time.toFixed(1));
+                
+                if (timeToTarget === Infinity) {
+                    simulationData.temperatures.push((initialTemp - progress * 2).toFixed(1));
+                } else {
+                    simulationData.temperatures.push((initialTemp - (initialTemp - targetTemp) * progress).toFixed(1));
+                }
+                
+                simulationData.humidities.push((initialHumidity - (initialHumidity - targetHumidity) * progress * 0.8).toFixed(1));
+                simulationData.powerConsumption.push(power.toFixed(2));
+            }
+        }
+
+        function updateAllCharts(data) {
+            updatePerformanceChart(data);
+            updateHeatPieChart(data);
+            updateTempTimeChart();
+            updateHumidityTimeChart();
+            updatePowerTimeChart();
+            updateHeatBarChart(data);
+            updateSensibleLatentChart(data);
+            updateEnergyDoughnutChart(data);
+            updateEfficiencyRadarChart(data);
+            updateCapacityGaugeChart(data);
+            updateCostBarChart(data);
+        }
+
+        function updatePerformanceChart(data) {
+            const ctx = document.getElementById('performanceChart');
+            if (charts.performance) charts.performance.destroy();
+            
+            charts.performance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Cooling Load', 'AC Capacity', 'Power Used'],
+                    datasets: [{
+                        label: 'kW',
+                        data: [
+                            data.totalCoolingLoad / 1000,
+                            data.acCapacityWatts / 1000,
+                            data.powerConsumption
+                        ],
+                        backgroundColor: ['#ff6384', '#36a2eb', '#ffce56']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            grid: { color: '#333' },
+                            ticks: { color: '#999' }
+                        },
+                        x: {
+                            grid: { color: '#333' },
+                            ticks: { color: '#999' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateHeatPieChart(data) {
+            const ctx = document.getElementById('heatPieChart');
+            if (charts.heatPie) charts.heatPie.destroy();
+            
+            charts.heatPie = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Walls', 'Windows', 'Ceiling', 'Solar', 'Occupants', 'Lighting', 'Equipment', 'Infiltration'],
+                    datasets: [{
+                        data: [
+                            data.wallHeatGain / 1000,
+                            data.windowHeatGain / 1000,
+                            data.ceilingHeatGain / 1000,
+                            data.solarHeatGain / 1000,
+                            data.occupantHeatGain / 1000,
+                            data.lightingHeatGain / 1000,
+                            data.equipmentHeatGain / 1000,
+                            data.infiltrationHeatGain / 1000
+                        ],
+                        backgroundColor: [
+                            '#ff6384', '#36a2eb', '#ffce56', '#4bc0c0',
+                            '#9966ff', '#ff9f40', '#ff6384', '#c9cbcf'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'right',
+                            labels: { color: '#999' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTempTimeChart() {
+            const ctx = document.getElementById('tempTimeChart');
+            if (charts.tempTime) charts.tempTime.destroy();
+            
+            charts.tempTime = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: simulationData.timePoints,
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: simulationData.temperatures,
+                        borderColor: '#ff6384',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { labels: { color: '#999' } }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: '#333' },
+                            ticks: { color: '#999' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Time (minutes)', color: '#999' },
+                            grid: { color: '#333' },
+                            ticks: { color: '#999' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateHumidityTimeChart() {
+            const ctx = document.getElementById('humidityTimeChart');
+            if (charts.humidTime) charts.humidTime.destroy();
+            
+            charts.humidTime = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: simulationData.timePoints,
+                    datasets: [{
+                        label: 'Humidity (%)',
+                        data: simulationData.humidities,
+                        borderColor: '#36a2eb',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#999' } } },
+                    scales: {
+                        y: {
+                            grid: { color: '#333' },
+                            ticks: { color: '#999' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Time (minutes)', color: '#999' },
+                            grid: { color: '#333' },
+                            ticks: { color: '#999' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updatePowerTimeChart() {
+            const ctx = document.getElementById('powerTimeChart');
+            if (charts.powerTime) charts.powerTime.destroy();
+            
+            charts.powerTime = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: simulationData.timePoints,
+                    datasets: [{
+                        label: 'Power Consumption (kW)',
+                        data: simulationData.powerConsumption,
+                        borderColor: '#ffce56',
+                        backgroundColor: 'rgba(255, 206, 86, 0.1)',
+                        fill: true,
+                        tension: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#999' } } },
+                    scales: {
+                        y: {
+                            grid: { color: '#333' },
+                            ticks: { color: '#999' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Time (minutes)', color: '#999' },
+                            grid: { color: '#333' },
+                            ticks: { color: '#999' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateHeatBarChart(data) {
+            const ctx = document.getElementById('heatBarChart');
+            if (charts.heatBar) charts.heatBar.destroy();
+            
+            charts.heatBar = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Walls', 'Windows', 'Ceiling', 'Solar', 'Occupants', 'Lighting', 'Equipment', 'Infiltration'],
+                    datasets: [{
+                        label: 'Heat Gain (kW)',
+                        data: [
+                            data.wallHeatGain / 1000,
+                            data.windowHeatGain / 1000,
+                            data.ceilingHeatGain / 1000,
+                            data.solarHeatGain / 1000,
+                            data.occupantHeatGain / 1000,
+                            data.lightingHeatGain / 1000,
+                            data.equipmentHeatGain / 1000,
+                            data.infiltrationHeatGain / 1000
+                        ],
+                        backgroundColor: '#00cccc'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            grid: { color: '#333' },
+                            ticks: { color: '#999' }
+                        },
+                        y: {
+                            grid: { color: '#333' },
+                            ticks: { color: '#999' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateSensibleLatentChart(data) {
+            const ctx = document.getElementById('sensibleLatentChart');
+            if (charts.sensibleLatent) charts.sensibleLatent.destroy();
+            
+            charts.sensibleLatent = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Sensible Load', 'Latent Load'],
+                    datasets: [{
+                        data: [data.sensibleLoad / 1000, data.latentLoad / 1000],
+                        backgroundColor: ['#ff6384', '#36a2eb']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { color: '#999' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateEnergyDoughnutChart(data) {
+            const ctx = document.getElementById('energyDoughnutChart');
+            if (charts.energyDoughnut) charts.energyDoughnut.destroy();
+            
+            charts.energyDoughnut = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Compressor', 'Fan', 'Other'],
+                    datasets: [{
+                        data: [data.powerConsumption * 0.8, data.powerConsumption * 0.15, data.powerConsumption * 0.05],
+                        backgroundColor: ['#ff6384', '#36a2eb', '#ffce56']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { color: '#999' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateEfficiencyRadarChart(data) {
+            const ctx = document.getElementById('efficiencyRadarChart');
+            if (charts.efficiencyRadar) charts.efficiencyRadar.destroy();
+            
+            const efficiency = Math.min((data.acCapacityWatts / data.totalCoolingLoad) * 100, 100);
+            const eerRating = Math.min((data.eer / 15) * 100, 100);
+            const insulation = 75;
+            const sizing = Math.min((data.acCapacityWatts / data.totalCoolingLoad) * 80, 100);
+            
+            charts.efficiencyRadar = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['System Efficiency', 'EER Rating', 'Insulation Quality', 'Proper Sizing', 'Overall Performance'],
+                    datasets: [{
+                        label: 'Performance Score',
+                        data: [efficiency, eerRating, insulation, sizing, (efficiency + eerRating + insulation + sizing) / 4],
+                        backgroundColor: 'rgba(0, 204, 204, 0.2)',
+                        borderColor: '#00cccc',
+                        pointBackgroundColor: '#00cccc'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#999' } }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: '#999', backdropColor: 'transparent' },
+                            grid: { color: '#333' },
+                            pointLabels: { color: '#999' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCapacityGaugeChart(data) {
+            const ctx = document.getElementById('capacityGaugeChart');
+            if (charts.capacityGauge) charts.capacityGauge.destroy();
+            
+            const utilization = Math.min((data.totalCoolingLoad / data.acCapacityWatts) * 100, 100);
+            
+            charts.capacityGauge = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Utilized', 'Available'],
+                    datasets: [{
+                        data: [utilization, 100 - utilization],
+                        backgroundColor: ['#00cccc', '#333'],
+                        circumference: 180,
+                        rotation: 270
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCostBarChart(data) {
+            const ctx = document.getElementById('costBarChart');
+            if (charts.costBar) charts.costBar.destroy();
+            
+            const hourly = data.energyCostPerHour;
+            const daily = hourly * 24;
+            const monthly = daily * 30;
+            const yearly = daily * 365;
+            
+            charts.costBar = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Hourly', 'Daily', 'Monthly', 'Yearly'],
+                    datasets: [{
+                        label: 'Cost ($)',
+                        data: [hourly, daily, monthly, yearly],
+                        backgroundColor: ['#4bc0c0', '#36a2eb', '#ff9f40', '#ff6384']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#333' },
+                            ticks: { color: '#999' }
+                        },
+                        x: {
+                            grid: { color: '#333' },
+                            ticks: { color: '#999' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDataTable(data) {
+            const tbody = document.getElementById('dataTableBody');
+            tbody.innerHTML = `
+                <tr><td>Wall Heat Gain</td><td>${(data.wallHeatGain/1000).toFixed(2)}</td><td>kW</td><td>Normal</td></tr>
+                <tr><td>Window Heat Gain</td><td>${(data.windowHeatGain/1000).toFixed(2)}</td><td>kW</td><td>Normal</td></tr>
+                <tr><td>Ceiling Heat Gain</td><td>${(data.ceilingHeatGain/1000).toFixed(2)}</td><td>kW</td><td>Normal</td></tr>
+                <tr><td>Solar Heat Gain</td><td>${(data.solarHeatGain/1000).toFixed(2)}</td><td>kW</td><td>Normal</td></tr>
+                <tr><td>Occupant Heat Gain</td><td>${(data.occupantHeatGain/1000).toFixed(2)}</td><td>kW</td><td>Normal</td></tr>
+                <tr><td>Lighting Heat Gain</td><td>${(data.lightingHeatGain/1000).toFixed(2)}</td><td>kW</td><td>Normal</td></tr>
+                <tr><td>Equipment Heat Gain</td><td>${(data.equipmentHeatGain/1000).toFixed(2)}</td><td>kW</td><td>Normal</td></tr>
+                <tr><td>Infiltration Heat Gain</td><td>${(data.infiltrationHeatGain/1000).toFixed(2)}</td><td>kW</td><td>Normal</td></tr>
+                <tr><td><strong>Sensible Load</strong></td><td><strong>${(data.sensibleLoad/1000).toFixed(2)}</strong></td><td>kW</td><td>✓</td></tr>
+                <tr><td><strong>Latent Load</strong></td><td><strong>${(data.latentLoad/1000).toFixed(2)}</strong></td><td>kW</td><td>✓</td></tr>
+                <tr><td><strong>Total Cooling Load</strong></td><td><strong>${(data.totalCoolingLoad/1000).toFixed(2)}</strong></td><td>kW</td><td>✓</td></tr>
+                <tr><td>Power Consumption</td><td>${data.powerConsumption.toFixed(2)}</td><td>kW</td><td>Normal</td></tr>
+                <tr><td>Energy Cost (Hourly)</td><td>${data.energyCostPerHour.toFixed(2)}</td><td>$/h</td><td>Normal</td></tr>
+                <tr><td>Energy Cost (Annual)</td><td>${data.annualCost.toFixed(0)}</td><td>$</td><td>Normal</td></tr>
+                <tr><td>Time to Target</td><td>${data.timeToTarget === Infinity ? '∞' : Math.round(data.timeToTarget)}</td><td>min</td><td>${data.timeToTarget === Infinity ? '⚠️' : '✓'}</td></tr>
+            `;
+        }
+
+        function resetParameters() {
+            location.reload();
+        }
+
+        function exportData() {
+            alert('Export functionality: Data would be exported to CSV/Excel format with all charts and metrics.');
+        }
+
+        updateDimensions();
+    </script>
+</body>
+</html>
